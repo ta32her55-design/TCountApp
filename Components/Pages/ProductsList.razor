@@ -1,0 +1,163 @@
+@page "/products"
+@using TCountApp.Models
+
+<div class="container mt-4" dir="rtl">
+    <h3 class="text-center mb-4 text-primary">إدارة المنتجات</h3>
+
+    <!-- أزرار التحكم -->
+    <div class="d-flex justify-content-between mb-3">
+        <button class="btn btn-success" @onclick="ShowAddForm">➕ إضافة صنف جديد</button>
+        <span class="badge bg-info p-2 fs-6">عدد الأصناف: @products.Count</span>
+    </div>
+
+    <!-- نموذج الإضافة والتعديل -->
+    @if (showForm)
+    {
+        <div class="card p-3 mb-4 shadow-sm">
+            <h5>@(isEditMode ? "تعديل صنف" : "إضافة صنف جديد")</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">اسم الصنف</label>
+                    <input type="text" class="form-control" @bind="currentProduct.ProName" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">سعر الشراء</label>
+                    <input type="number" class="form-control" @bind="currentProduct.PurchPrice" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">سعر البيع 1</label>
+                    <input type="number" class="form-control" @bind="currentProduct.SellPrice1" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">الكمية</label>
+                    <input type="number" class="form-control" @bind="currentProduct.ProQuantity" />
+                </div>
+                <div class="col-12 text-end">
+                    <button class="btn btn-primary" @onclick="SaveProduct">حفظ</button>
+                    <button class="btn btn-secondary ms-2" @onclick="CancelForm">إلغاء</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- جدول المنتجات -->
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>كود الصنف</th>
+                    <th>اسم الصنف</th>
+                    <th>سعر الشراء</th>
+                    <th>سعر البيع</th>
+                    <th>الكمية</th>
+                    <th>العمليات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (products.Count == 0)
+                {
+                    <tr>
+                        <td colspan="6" class="text-muted py-4">لا توجد منتجات مضافة بعد.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var prod in products)
+                    {
+                        <tr>
+                            <td>@prod.ProductID</td>
+                            <td><strong>@prod.ProName</strong></td>
+                            <td>@prod.PurchPrice</td>
+                            <td>@prod.SellPrice1</td>
+                            <td>
+                                <span class="badge @(prod.ProQuantity > 5 ? "bg-success" : "bg-danger")">
+                                    @prod.ProQuantity
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-warning mb-1" @onclick="() => EditProduct(prod)">✏️</button>
+                                <button class="btn btn-sm btn-danger mb-1" @onclick="() => DeleteProduct(prod.ProductID)">❌</button>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private List<Product> products = new();
+    private Product currentProduct = new();
+    private bool showForm = false;
+    private bool isEditMode = false;
+
+    protected override void OnInitialized()
+    {
+        // بيانات تجريبية للتجربة السريعة
+        products = new List<Product>
+        {
+            new Product { ProductID = 1, ProName = "كابل شبكة مصفح", PurchPrice = 120, SellPrice1 = 180, ProQuantity = 22 },
+            new Product { ProductID = 2, ProName = "راوتر ذكي 4G", PurchPrice = 450, SellPrice1 = 600, ProQuantity = 4 }
+        };
+    }
+
+    private void ShowAddForm()
+    {
+        currentProduct = new Product();
+        isEditMode = false;
+        showForm = true;
+    }
+
+    private void EditProduct(Product prod)
+    {
+        currentProduct = new Product
+        {
+            ProductID = prod.ProductID,
+            ProName = prod.ProName,
+            PurchPrice = prod.PurchPrice,
+            SellPrice1 = prod.SellPrice1,
+            ProQuantity = prod.ProQuantity
+        };
+        isEditMode = true;
+        showForm = true;
+    }
+
+    private void SaveProduct()
+    {
+        if (string.IsNullOrEmpty(currentProduct.ProName)) return;
+
+        if (isEditMode)
+        {
+            var existing = products.FirstOrDefault(p => p.ProductID == currentProduct.ProductID);
+            if (existing != null)
+            {
+                existing.ProName = currentProduct.ProName;
+                existing.PurchPrice = currentProduct.PurchPrice;
+                existing.SellPrice1 = currentProduct.SellPrice1;
+                existing.ProQuantity = currentProduct.ProQuantity;
+            }
+        }
+        else
+        {
+            currentProduct.ProductID = products.Count > 0 ? products.Max(p => p.ProductID) + 1 : 1;
+            products.Add(currentProduct);
+        }
+
+        showForm = false;
+    }
+
+    private void DeleteProduct(int id)
+    {
+        var prod = products.FirstOrDefault(p => p.ProductID == id);
+        if (prod != null)
+        {
+            products.Remove(prod);
+        }
+    }
+
+    private void CancelForm()
+    {
+        showForm = false;
+    }
+}
